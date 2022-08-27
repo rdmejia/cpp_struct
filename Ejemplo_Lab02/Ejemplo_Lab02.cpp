@@ -1,88 +1,76 @@
 #include <iostream>
 
 using std::cout;
+using std::cin;
+using std::endl;
 
+const int ANIO_ACTUAL = 2022;
 const int MES_ACTUAL = 8;
-const int ANIO_ACTUAL = 2021;
 const int MES_BONO14 = 6;
 
-struct Empleado {
+struct empleado {
     char nombre[30];
     int edad;
     double salario;
-    int mesDeContratacion;
-    int anioDeContratacion;
+    int mesDeContrato;
+    int anioDeContrato;
+};
 
-    double getBono14() {
-        if (MES_ACTUAL > MES_BONO14) {
-			return salario * ((double)(MES_ACTUAL - MES_BONO14) / 12);
-        }
+struct calculadoraDeBono {
+    virtual double calcularBono(empleado emp) = 0;
 
-        if (fueContratadoEsteAnio()) {
-			return salario * (((double)MES_BONO14 - mesDeContratacion) / 12);
-        }
-
-        if (fueContratadoAnioPasadoDespuesDelBono14()) {
-            return salario * ((double)(MES_BONO14 + 12 - mesDeContratacion) / 12);
-        }
-
-		return salario * ((double)(MES_ACTUAL + 12 - MES_BONO14) / 12);
-    }
-
-    double getAguinaldo() {
-        if (fueContratadoEsteAnio()) {
-            return salario * ((double)(MES_ACTUAL - mesDeContratacion) / 12);
-        }
-
-        return salario * ((double)MES_ACTUAL / 12);
-    }
-
-    double getTiempoEnLaEmpresa() {
-        double tiempoActual = (ANIO_ACTUAL * 12) + MES_ACTUAL;
-        double tiempoContratado = (anioDeContratacion * 12) + mesDeContratacion;
-
-        return (tiempoActual - tiempoContratado) / 12;
-    }
-
-    double getIndemnizacion() {
-        return getTiempoEnLaEmpresa() * salario;
-    }
-
-private:
-    bool fueContratadoEsteAnio() {
-        return anioDeContratacion == ANIO_ACTUAL;
-    }
-
-    bool fueContratadoAnioPasadoDespuesDelBono14() {
-		return anioDeContratacion == (ANIO_ACTUAL - 1) && mesDeContratacion > MES_BONO14;
+    protected:
+    bool fueContratadoEsteAnio(empleado emp) {
+        return emp.anioDeContrato == ANIO_ACTUAL;
     }
 };
 
+struct calculadoraDeAguinaldo : calculadoraDeBono {
+    double calcularBono(empleado emp) {
+        if (fueContratadoEsteAnio(emp))
+        {
+            return emp.salario * ((double)(MES_ACTUAL - emp.mesDeContrato) / 12);
+        }
 
+        return emp.salario * ((double)MES_ACTUAL / 12);
+    }
+};
 
-void mostrarInformacionDelEmpleado(Empleado empleado) {
-    cout << "\n============================";
-    cout << "\nNombre: " << empleado.nombre;
-    cout << "\nEdad: " << empleado.edad << " anios";
-    cout << "\nSalario mensual: Q" << empleado.salario;
-    cout << "\nFecha de contratacion: " << empleado.mesDeContratacion << "/" << empleado.anioDeContratacion;
-    cout << "\nTiempo en la empresa: " << empleado.getTiempoEnLaEmpresa() << " anios";
-    cout << "\nBono 14 acumulado: Q" << empleado.getBono14();
-    cout << "\nAguinaldo acumulado: Q" << empleado.getAguinaldo();
-    cout << "\nIndemnizacion acumulada: Q" << empleado.getIndemnizacion();
-    cout << "\n============================\n";
+struct calculadoraDeBono14 : calculadoraDeBono {
+    double calcularBono(empleado emp) {
+        if (MES_ACTUAL > MES_BONO14) {
+            return emp.salario * ((double)(MES_ACTUAL - MES_BONO14) / 12);
+        }
+
+        if (fueContratadoEsteAnio(emp)) {
+            return emp.salario * ((double)(MES_BONO14 - emp.mesDeContrato) / 12);
+        }
+
+        if (fueContratadoAnioPasadoDespuesDelBono14(emp)) {
+            return emp.salario * ((double)(MES_BONO14 - emp.mesDeContrato) / 12);
+        }
+        
+        return emp.salario * ((double)(MES_ACTUAL + 12 - MES_BONO14) / 12);
+    }
+
+    private:
+    bool fueContratadoAnioPasadoDespuesDelBono14(empleado emp) {
+        return emp.anioDeContrato == (ANIO_ACTUAL - 1)
+        && emp.mesDeContrato > MES_BONO14;   
+    }
+};
+
+int main(int argc, char** argv) {
+    empleado carlos = {"Carlos Molina", 27, 1000, 8, 2019};
+
+    calculadoraDeAguinaldo aguinaldo = calculadoraDeAguinaldo();
+    calculadoraDeBono14 bono14 = calculadoraDeBono14();
+
+    double aguinaldoDeCarlos = aguinaldo.calcularBono(carlos);
+    double bono14DeCarlos = bono14.calcularBono(carlos);
+
+    cout << "Aguinaldo de Carlos: " << aguinaldoDeCarlos << endl;
+    cout << "Bono 14 de Carlos: " << bono14DeCarlos << endl;
+
+    return 798423;
 }
-
-int main()
-{
-    Empleado carlos = { "Carlos Perez", 20, 1000, 8, 2019 };
-    Empleado daniel = { "Daniel Mejia", 27, 2000, 6, 2017 };
-    Empleado maria = { "Maria Perez", 20, 3500, 10, 2015 };
-    Empleado lucia = { "Lucia Bautista", 20, 1000, 2, 2021 };
-
-    mostrarInformacionDelEmpleado(carlos);
-    mostrarInformacionDelEmpleado(daniel);
-    mostrarInformacionDelEmpleado(maria);
-    mostrarInformacionDelEmpleado(lucia);
-}
-
